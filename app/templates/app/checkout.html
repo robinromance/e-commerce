@@ -1,0 +1,126 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Buy Now{% endblock title %}
+{% block main-content %}
+<div class="container">
+    {% if messages %}
+        {% for msg in messages %}
+            <div class="alert alert-danger" role="alert">
+                {{msg}}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class="row my-5">
+        <div class="col-sm-6">
+            <h4>Order Summary</h4>
+            <hr>
+            {% for items in cart_items %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <h5>Product:{{items.product.title}}</h5>
+                        <p class="fw-light">Quantity:{{items.quantity}}</p>
+                        <p class="fw-bold">Price: {{items.product.discount_price}} </p>
+                    </div>
+                </div>
+            {% endfor %}
+            <p class="fw-bold">Total Cost + Rs. 40 = {{totalamount}}</p>
+            <small>Terms and condition: Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</small>
+        </div>
+        <div class="col-sm-4 offset-sm-1">
+            <h4>Select Shipping Address</h4>
+            <hr>
+            <form action="" method="post" id="myform">
+                {% csrf_token %}
+                {% for ad in add %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>{{ad.name}}</h5>
+                            <p>Mobile : {{ad.mobile}}</p>
+                            <p>{{ad.locality}} {{ad.city}} {{ad.state}} - {{ad.zipcode}}</p>
+                        </div>
+                    </div>
+                    <div class="form-check mt-2 mb-5">
+                        <input type="radio" class="form-check-input" name="custid" id="custadd{{forloop.counter}}" value="{{ad.id}}" >
+                        <label for="custadd{{forloop.counter}}" class="form-check-label fw-bold">Address:{{forloop.counter}}</label>
+                    </div>
+                {% endfor %}
+                <div class="form-check mb-3">
+                    <label for="totalamount" class="form-label">Total Amount</label>
+                    <input type="number" class="form-control" name="totalamount" value={{totalamount}} readonly>
+                </div>
+                <div class="text-end">
+                    {% comment %} <button type="submit" class="btn btn-warning mt-3 px-5">Continue</button> {% endcomment %}
+                    <button id="rzp-button1" type="submit" class="btn btn-warning mt-3 px-5 fw-bold">Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% block payment-gateway %}
+{% comment %} <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var options = {
+    "key": "rzp_test_PBClYAerQq5gB6", 
+    "amount": "{{razoramount}}",
+    "currency": "INR",
+    "name": "Robins Products",
+    "description": "Test Transaction",
+    "image": "https://example.com/your_logo",
+    "order_id": "{{order_id}}", 
+    "handler": function (response){
+        console.log("success")
+        var form = document.getElementById("myform")
+        window.location.href = 'href://localhost:8000/pymentdone?order_id=${response.razorpay_order_id}&payment_id=${respponse.razorpay_payment_id}&cust_id=${form.elements["custid"].value}'
+    },
+    "theme": {
+        "color": "#3399cc"
+    }
+};
+var rzp1 = new Razorpay(options);
+rzp1.on('payment.failed', function (response){
+        alert(response.error.description);   
+});
+document.getElementById('rzp-button1').onclick = function(e){
+    console.log("button click")
+    rzp1.open();
+    e.preventDefault();
+}
+</script> {% endcomment %}
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var options = {
+    "key": "rzp_test_PBClYAerQq5gB6", 
+    "amount": "{{ razoramount }}",  // Use double curly braces for template variables
+    "currency": "INR",
+    "name": "Robins Products",
+    "description": "Test Transaction",
+    "image": "https://example.com/your_logo",
+    "order_id": "{{ order_id }}",  // Use double curly braces for template variables
+    "handler": function (response){
+        console.log("Payment success");
+        var form = document.getElementById("myform");
+        var custId = form.elements["custid"].value;
+        var paymentId = response.razorpay_payment_id;
+        var orderId = response.razorpay_order_id;
+        var redirectUrl = `/paymentdone?order_id=${orderId}&payment_id=${paymentId}&cust_id=${custId}`;
+        window.location.href = redirectUrl;
+    },
+    "theme": {
+        "color": "#3399cc"
+    }
+};
+var rzp1 = new Razorpay(options);
+rzp1.on('payment.failed', function (response){
+    alert(response.error.description);   
+});
+document.getElementById('rzp-button1').onclick = function(e){
+    console.log("Button click");
+    // Perform client-side validation here if needed
+    rzp1.open();
+    e.preventDefault();
+}
+</script>
+
+{% endblock payment-gateway %}
+{% endblock main-content%}
